@@ -71,12 +71,8 @@
 ;;;; commands
 ;;;;; debug-statements
 ;;;###autoload
-(defun debug-print (arg &optional lang-format)
-  (interactive "P")
-  (let* ((lang-format (or lang-format local-lang-format
-                          ;; TODO make this an actual error that can be caught
-                          (error "no lang format provided")))
-         (thing (unless (current-line-empty-p)
+(defun debug-print (arg lang-format)
+  (let* ((thing (unless (current-line-empty-p)
                   (progn
                     (make-it-quiet (dwim-kill))
                     (pop kill-ring))))
