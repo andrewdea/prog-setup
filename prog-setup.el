@@ -26,6 +26,7 @@
 (defun prog-setup-appearance (&optional absolute)
   "Set preferred appearance for prog-mode"
   (display-line-numbers-mode t)
+  (auto-fill-mode t)
   (if absolute
       (absolute-line-numbers-setup)
     (relative-line-numbers-setup))
@@ -79,7 +80,7 @@
          (line-number (when (or arg (not thing))
                         (line-number-at-pos)))
          ;; TODO add support to get the name of the current
-         ;; function/class/block
+         ;; function/class/block?
          )
     (insert (funcall lang-format thing line-number))))
 
