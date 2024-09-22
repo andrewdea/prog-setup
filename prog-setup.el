@@ -24,7 +24,9 @@
 ;;;; appearance
 ;;;###autoload
 (defun prog-setup-appearance (&optional absolute)
-  "Set preferred appearance for prog-mode"
+  "Set preferred appearance for `prog-mode'.
+If ABSOLUTE is non-nil, call `absolute-line-numbers-setup', otherwise,
+call `relative-line-numbers-setup'"
   (display-line-numbers-mode t)
   (auto-fill-mode t)
   (if absolute
@@ -33,51 +35,64 @@
   (electric-pair-local-mode t))
 
 (defun adj/:around-goto-line-read-args (origfn)
+  "Temporarily set the line numbers to absolute while calling ORIGFN."
   (let ((display-line-numbers 'absolute))
     (funcall origfn)))
 
 (defun relative-line-numbers-setup ()
+  "Set `display-line-numbers' to relative.
+Make sure line-numbers will be absolute when calling `goto-line'."
   (interactive)
   (display-line-numbers-mode t)
   (setq display-line-numbers 'relative)
-  (defun adj/:around-goto-line-read-args (origfn)
-    (let ((display-line-numbers 'absolute))
-      (funcall origfn)))
   (advice-add 'goto-line-read-args :around #'adj/:around-goto-line-read-args))
 
 (defun absolute-line-numbers-setup ()
+  "Set `display-line-numbers' to relative."
   (interactive)
   (setq display-line-numbers 'absolute)
   (display-line-numbers-mode)
+  ;; in case this advice was added by `relative-line-numbers-setup',
+  ;; we can remove it:
   (advice-remove 'goto-line-read-args #'adj/:around-goto-line-read-args))
 
 (defun line-numbers-global (setup)
+  "Generic way to set the line-numbers style.
+Call SETUP in every buffer where `display-line-numbers-mode' is t"
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when display-line-numbers-mode
         (funcall setup)))))
 
 (defun absolute-line-numbers-global ()
+  "Set the line-numbers to absolute globally.
+Make sure any new buffer in `prog-mode' will have the same setup"
   (interactive)
   (line-numbers-global #'absolute-line-numbers-setup)
-  (remove-hook 'prog-mode-hook #'prog-setup)
-  (add-hook 'prog-mode-hook (lambda () (prog-setup 'absolute))))
+  (remove-hook 'prog-mode-hook #'prog-setup-appearance)
+  (add-hook 'prog-mode-hook (lambda () (prog-setup-appearance 'absolute))))
 
 (defun relative-line-numbers-global ()
+  "Set the line-numbers to relative globally.
+Make sure any new buffer in `prog-mode' will have the same setup"
   (interactive)
   (line-numbers-global #'relative-line-numbers-setup)
-  (remove-hook 'prog-mode-hook (lambda () (prog-setup 'absolute)))
-  (add-hook 'prog-mode-hook #'prog-setup))
+  (remove-hook 'prog-mode-hook (lambda () (prog-setup-appearance 'absolute)))
+  (add-hook 'prog-mode-hook #'prog-setup-appearance))
 
 ;;;; commands
 ;;;;; debug-statements
 ;;;###autoload
-(defun debug-print (arg lang-format)
+(defun debug-print (with-line-nmb lang-format)
+  "Insert a debug-print statement around the current region/line.
+Use LANG-FORMAT to determine how to format the print-statement.
+When WITH-LINE-NMB is non-nil, or if the current line is
+empty, also print the current line."
   (let* ((thing (unless (current-line-empty-p)
                   (progn
                     (make-it-quiet (dwim-kill))
                     (pop kill-ring))))
-         (line-number (when (or arg (not thing))
+         (line-number (when (or with-line-nmb (not thing))
                         (line-number-at-pos)))
          ;; TODO add support to get the name of the current
          ;; function/class/block?
