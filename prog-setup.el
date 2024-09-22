@@ -83,7 +83,7 @@ Make sure any new buffer in `prog-mode' will have the same setup"
 ;;;; commands
 ;;;;; debug-statements
 ;;;###autoload
-(defun debug-print (with-line-nmb lang-format)
+(defun prog--debug-print (with-line-nmb lang-format)
   "Insert a debug-print statement around the current region/line.
 Use LANG-FORMAT to determine how to format the print-statement.
 When WITH-LINE-NMB is non-nil, or if the current line is
