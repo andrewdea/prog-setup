@@ -91,27 +91,37 @@ Make sure any new buffer in `prog-mode' will have the same setup"
 ;;;; commands
 ;;;;; debug-statements
 ;;;###autoload
-(defun prog--debug-print (with-line-nmb lang-format)
+(defun prog--debug-print (verbose lang-format)
   "Insert a debug-print statement around the current region/line.
 Use LANG-FORMAT to determine how to format the print-statement.
-When WITH-LINE-NMB is non-nil, or if the current line is
-empty, also print the current line."
+When VERBOSE is non-nil, or if the current line is
+empty, also print the current line and (when possible) the name of the
+current block."
   (let* ((thing (unless (current-line-empty-p)
                   (progn
                     (make-it-quiet (dwim-kill))
                     (pop kill-ring))))
-         (line-number (when (or with-line-nmb (not thing))
+         (line-number (when (or verbose (not thing))
                         (line-number-at-pos)))
-         ;; TODO add support to get the name of the current
-         ;; function/class/block?
-         )
-    (insert (funcall lang-format thing line-number))))
+         (block-name (when (or verbose (not thing))
+                       ;; add a catch in case the mode doesn't
+                       ;; support lsp
+                       (ignore-error 'void-function
+                         (string-trim
+                          (lsp-headerline--build-symbol-string))))))
+    ;; remove text properties
+    (when block-name
+      (set-text-properties 0 (length block-name) nil block-name))
+    (insert (funcall lang-format thing line-number block-name))))
 
+;;;;; run-this
 (defun prog--run-this (file compile-func run-command)
   "Generic run-this command.
-Start a shell for FILE, and insert the `run-command' into it."
+Start a shell for FILE, call the function COMPILE-FUNC (if non-nil),
+compose a reasonable window setup, and insert the RUN-COMMAND into
+the shell."
   (when compile-func
-    ;; first, compile
+    ;; compile
     (progn
       (funcall compile-func)
       ;; compose a reasonable window setup
@@ -121,7 +131,6 @@ Start a shell for FILE, and insert the `run-command' into it."
   (named-shell-file file)
   (insert run-command))
 
-;;;;; run-this
 ;;;###autoload
 
 (provide 'prog-setup)
