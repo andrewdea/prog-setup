@@ -99,9 +99,17 @@ empty, also print the current line."
          )
     (insert (funcall lang-format thing line-number))))
 
-(defun prog--run-this (file run-command)
+(defun prog--run-this (file compile-func run-command)
   "Generic run-this command.
 Start a shell for FILE, and insert the `run-command' into it."
+  (when compile-func
+    ;; first, compile
+    (progn
+      (funcall compile-func)
+      ;; compose a reasonable window setup
+      (pop-to-buffer "*compilation*")
+      (when (not (window-vertically-split-p))
+        (split-window-below))))
   (named-shell-file file)
   (insert run-command))
 
