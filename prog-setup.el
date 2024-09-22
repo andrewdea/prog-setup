@@ -115,11 +115,12 @@ current block."
     (insert (funcall lang-format thing line-number block-name))))
 
 ;;;;; run-this
-(defun prog--run-this (file compile-func run-command)
+(defun prog--run-this (file compile-func run-command &rest setup-funcs)
   "Generic run-this command.
-Start a shell for FILE, call the function COMPILE-FUNC (if non-nil),
-compose a reasonable window setup, and insert the RUN-COMMAND into
-the shell."
+Start a shell for FILE, setup the shell using SETUP-FUNCS, call
+the function COMPILE-FUNC (if non-nil), compose a reasonable window
+setup, and insert the RUN-COMMAND into the shell."
+  (message "compile-func: %s" compile-func)
   (when compile-func
     ;; compile
     (progn
@@ -128,7 +129,7 @@ the shell."
       (pop-to-buffer "*compilation*")
       (when (not (window-vertically-split-p))
         (split-window-below))))
-  (named-shell-file file)
+  (named-shell-file file setup-funcs)
   (insert run-command))
 
 ;;;###autoload
