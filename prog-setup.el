@@ -99,6 +99,15 @@ empty, also print the current line."
          )
     (insert (funcall lang-format thing line-number))))
 
+(defun prog--run-this (file run-command)
+  "Generic run-this command.
+Start a shell for FILE, and insert the `run-command' into it."
+  (named-shell-file file)
+  (insert run-command))
+
+;;;;; run-this
+;;;###autoload
+
 (provide 'prog-setup)
 
 ;;; prog-setup.el ends here
