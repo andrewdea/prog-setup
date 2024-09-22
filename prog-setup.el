@@ -21,6 +21,14 @@
 ;;; Commentary:
 
 ;;; Code:
+;;;; declare a bunch of things we're using
+(defvar display-line-numbers-mode)
+(declare-function current-line-empty-p user-init-file)
+(declare-function make-it-quiet user-init-file)
+(declare-function dwim-kill user-init-file)
+(declare-function window-vertically-split-p user-init-file)
+(declare-function named-shell-file user-init-file)
+
 ;;;; appearance
 ;;;###autoload
 (defun prog-setup-appearance (&optional absolute)
