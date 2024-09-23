@@ -90,20 +90,17 @@ Make sure any new buffer in `prog-mode' will have the same setup"
 
 ;;;; commands
 ;;;;; debug-statements
-;;;###autoload
-(defun prog--debug-print (verbose lang-format)
-  "Insert a debug-print statement around the current region/line.
-Use LANG-FORMAT to determine how to format the print-statement.
+(defun prog-debug--get-info-at-point (&optional verbose)
+  "Get information at the current point to print-debug.
 When VERBOSE is non-nil, or if the current line is
 empty, also print the current line and (when possible) the name of the
 current block."
-  (let* ((thing (unless (current-line-empty-p)
-                  (progn
-                    (make-it-quiet (dwim-kill))
-                    (pop kill-ring))))
-         (line-number (when (or verbose (not thing))
+  (let* ((exp (unless (current-line-empty-p)
+                (make-it-quiet (dwim-kill))
+                (pop kill-ring)))
+         (line-number (when (or verbose (not exp))
                         (line-number-at-pos)))
-         (block-name (when (or verbose (not thing))
+         (block-name (when (or verbose (not exp))
                        ;; add a catch in case the mode doesn't
                        ;; support lsp
                        (ignore-error 'void-function
@@ -112,27 +109,42 @@ current block."
     ;; remove text properties
     (when block-name
       (set-text-properties 0 (length block-name) nil block-name))
-    (insert (funcall lang-format thing line-number block-name))))
+
+    (list exp line-number block-name)))
+
+;;;###autoload
+(defun prog-debug-print (verbose lang-format)
+  "Insert a debug-print statement around the current region/line.
+Use LANG-FORMAT to determine how to format the print-statement.
+When VERBOSE is non-nil, add more information to the statement."
+  (cl-multiple-value-bind
+      (exp line-number block-name)
+      (prog-debug--get-info-at-point verbose)
+    (insert (funcall lang-format exp line-number block-name))))
 
 ;;;;; run-this
-(defun prog--run-this (file compile-func run-command &rest setup-funcs)
+
+(defun prog--compile (func)
+  "Call FUNC to compile the current file/project.
+Compose a reasonable window setup with the new *compilation* buffer."
+  ;; compile
+  (funcall func)
+  ;; compose a reasonable window setup
+  (pop-to-buffer "*compilation*")
+  (when (not (window-vertically-split-p))
+    (split-window-below)))
+
+;;;###autoload
+(defun prog-run-this (file compile-func run-command &rest setup-funcs)
   "Generic run-this command.
 Start a shell for FILE, setup the shell using SETUP-FUNCS, call
 the function COMPILE-FUNC (if non-nil), compose a reasonable window
 setup, and insert the RUN-COMMAND into the shell."
-  (message "compile-func: %s" compile-func)
   (when compile-func
-    ;; compile
-    (progn
-      (funcall compile-func)
-      ;; compose a reasonable window setup
-      (pop-to-buffer "*compilation*")
-      (when (not (window-vertically-split-p))
-        (split-window-below))))
+    (prog--compile compile-func))
   (named-shell-file file setup-funcs)
   (insert run-command))
 
-;;;###autoload
 
 (provide 'prog-setup)
 
