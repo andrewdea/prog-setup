@@ -90,22 +90,46 @@ Make sure any new buffer in `prog-mode' will have the same setup"
 
 ;;;; commands
 ;;;;; debug-statements
+(defun treesit-defun-name-at-point ()
+  "Use `treesit' to get the name of the current function-block.
+treesitter nodes might not always match with the intuitive
+code-boundaries:
+if we're at the very end of a function block, treesit thinks a new
+node is starting so it returns nil. So in that case, try the previous
+line as well"
+  (treesit-defun-name
+   (or (treesit-defun-at-point)
+       (save-excursion
+         (previous-line)
+         (treesit-defun-at-point)))))
+
+(defvar  prog-defun-name-at-point-function #'treesit-defun-name-at-point
+  "Function to detect the name of the definition-block at point.
+By default, use `treesit', but you can implement your own.
+NOTE that the default will throw a no-parser error if called from a
+mode without treesitter.")
+
+(defun prog-defun-name-at-point ()
+  "Use the customizable `prog-defun-name-at-point-function' to get the
+name of the definition-block at point"
+  (interactive)
+  (let ((outer-res (funcall prog-defun-name-at-point-function)))
+    outer-res))
+
 (defun prog-debug--get-info-at-point (&optional verbose)
   "Get information at the current point to print-debug.
 When VERBOSE is non-nil, or if the current line is
-empty, also print the current line and (when possible) the name of the
-current block."
+empty, also print:
+ - line-number at point
+ - name of the function-block at point (use treesit when available, or
+a language-specific function)"
   (let* ((exp (unless (current-line-empty-p)
                 (make-it-quiet (dwim-kill))
                 (pop kill-ring)))
          (line-number (when (or verbose (not exp))
                         (line-number-at-pos)))
          (block-name (when (or verbose (not exp))
-                       ;; add a catch in case the mode doesn't
-                       ;; support lsp
-                       (ignore-error 'void-function
-                         (string-trim
-                          (lsp-headerline--build-symbol-string))))))
+                       (prog-defun-name-at-point))))
     ;; remove text properties
     (when block-name
       (set-text-properties 0 (length block-name) nil block-name))
@@ -145,6 +169,19 @@ setup, and insert the RUN-COMMAND into the shell."
   (named-shell-file file setup-funcs)
   (insert run-command))
 
+;;;;; language-specific
+(defun emacs-lisp-defun-name-at-point ()
+  (save-excursion
+    (let ((og-point (point)))
+      (search-backward-regexp " *(defun *\\([^ ]+\\) *(" nil 'noerr)
+      (when (<= og-point (progn (forward-sexp) (point)))
+        (match-string 1)))))
+
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (setq-local
+             prog-defun-name-at-point-function
+             #'emacs-lisp-defun-name-at-point)))
 
 (provide 'prog-setup)
 
