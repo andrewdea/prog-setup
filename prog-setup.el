@@ -37,6 +37,7 @@ If ABSOLUTE is non-nil, call `absolute-line-numbers-setup', otherwise,
 call `relative-line-numbers-setup'"
   (display-line-numbers-mode t)
   (auto-fill-mode t)
+  (setq-local parse-sexp-ignore-comments nil)
   (if absolute
       (absolute-line-numbers-setup)
     (relative-line-numbers-setup))
@@ -128,6 +129,7 @@ a language-specific function)"
                 (pop kill-ring)))
          (line-number (when (or verbose (not exp))
                         (line-number-at-pos)))
+	 ;; TODO instead of the lsp, use `treesit-add-log-current-defun'
          (block-name (when (or verbose (not exp))
                        (prog-defun-name-at-point))))
     ;; remove text properties
