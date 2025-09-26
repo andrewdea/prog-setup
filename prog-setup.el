@@ -167,7 +167,8 @@ Start a shell for FILE, setup the shell using SETUP-FUNCS, call
 the function COMPILE-FUNC (if non-nil), compose a reasonable window
 setup, and insert the RUN-COMMAND into the shell."
   (when compile-func
-    (prog--compile compile-func))
+    (prog--compile compile-func 'to-run))
+  ;; TODO: explore using `async-shell-command' here instead
   (named-shell-file file setup-funcs)
   (insert run-command))
 
