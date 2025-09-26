@@ -41,7 +41,8 @@ call `relative-line-numbers-setup'"
   (if absolute
       (absolute-line-numbers-setup)
     (relative-line-numbers-setup))
-  (electric-pair-local-mode t))
+  (electric-pair-local-mode t)
+  (flyspell-prog-mode))
 
 (defun adj/:around-goto-line-read-args (origfn)
   "Temporarily set the line numbers to absolute while calling ORIGFN."
