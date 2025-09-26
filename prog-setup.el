@@ -149,15 +149,15 @@ When VERBOSE is non-nil, add more information to the statement."
     (insert (funcall lang-format exp line-number block-name))))
 
 ;;;;; run-this
-
-(defun prog--compile (func)
+(defun prog--compile (func &optional to-run)
   "Call FUNC to compile the current file/project.
-Compose a reasonable window setup with the new *compilation* buffer."
+When TO-RUN is non-nil, setup the project to run as well:
+compose a reasonable window setup with the new *compilation* buffer."
   ;; compile
   (funcall func)
   ;; compose a reasonable window setup
   (pop-to-buffer "*compilation*")
-  (when (not (window-vertically-split-p))
+  (when (and to-run (not (window-vertically-split-p)))
     (split-window-below)))
 
 ;;;###autoload
