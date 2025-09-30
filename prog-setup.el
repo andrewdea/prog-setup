@@ -98,14 +98,22 @@ treesitter nodes might not always match with the intuitive
 code-boundaries:
 if we're at the very end of a function block, treesit thinks a new
 node is starting so it returns nil. So in that case, try the previous
-line as well"
+line as well.
+NOTE that the default will throw a no-parser error if called from a
+mode without treesitter."
   (treesit-defun-name
    (or (treesit-defun-at-point)
        (save-excursion
          (previous-line)
          (treesit-defun-at-point)))))
 
-(defvar  prog-defun-name-at-point-function #'treesit-defun-name-at-point
+(defun prog-defun-or-file-nondir-at-point ()
+  "Try using `treesit-defun-name-at-point': if that returns nil, get the
+`buffer-file-name'"
+  (or (treesit-defun-name-at-point)
+      (file-name-nondirectory (buffer-file-name))))
+
+(defvar  prog-defun-name-at-point-function #'prog-defun-or-file-nondir-at-point
   "Function to detect the name of the definition-block at point.
 By default, use `treesit', but you can implement your own.
 NOTE that the default will throw a no-parser error if called from a
