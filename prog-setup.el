@@ -152,6 +152,7 @@ compose a reasonable window setup with the new *compilation* buffer."
   (when (and to-run (not (window-vertically-split-p)))
     (split-window-below)))
 
+
 ;;;###autoload
 (defun prog-run-this (file compile-func run-command &rest setup-funcs)
   "Generic run-this command.
@@ -160,8 +161,16 @@ the function COMPILE-FUNC (if non-nil), compose a reasonable window
 setup, and insert the RUN-COMMAND into the shell."
   (when compile-func
     (prog--compile compile-func 'to-run))
-  ;; TODO: explore using `async-shell-command' here instead
+  ;; TODO: explore using `async-shell-command' here instead?
   (named-shell-file file setup-funcs)
+  ;; use `compilation-shell-minor-mode' to make file-paths clickable
+  ;; (setq-local compile-command run-command)
+  ;; NOTE the above would allow using `recompile' to easily re-run the command, but
+  ;; the problem is that `recompile' will look for the *compile* buffer rather
+  ;; than stay within our desired one
+  ;; TODO figure out how to fix that? potentially leveraging the variable
+  ;; `compilation-buffer-name-function'
+  (compilation-shell-minor-mode +1)
   (insert run-command))
 
 ;;;;; language-specific
